@@ -125,8 +125,8 @@ autoencoder.compile(optimizer='adam', loss='mse')
 # Train the autoencoder
 history = autoencoder.fit(
     noisy_signals, clean_signals,
-    epochs=50,
-    batch_size=32,
+    epochs=100,
+    batch_size=16,
     shuffle=True,
     validation_split=0.2
 )
