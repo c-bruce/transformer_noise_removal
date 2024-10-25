@@ -41,24 +41,26 @@ class BaseAttention(tf.keras.layers.Layer):
 
 class GlobalSelfAttention(BaseAttention):
   def call(self, x):
-    attn_output = self.mha(
-        query=x,
-        value=x,
-        key=x)
-    x = self.add([x, attn_output])
-    x = self.layernorm(x)
-    return x
-
-class CausalSelfAttention(BaseAttention):
-  def call(self, x):
-    attn_output = self.mha(
+    attn_output, attn_scores = self.mha(
         query=x,
         value=x,
         key=x,
+        return_attention_scores=True)
+    x = self.add([x, attn_output])
+    x = self.layernorm(x)
+    return x, attn_scores
+
+class CausalSelfAttention(BaseAttention):
+  def call(self, x):
+    attn_output, attn_scores = self.mha(
+        query=x,
+        value=x,
+        key=x,
+        return_attention_scores=True,
         use_causal_mask = True)
     x = self.add([x, attn_output])
     x = self.layernorm(x)
-    return x
+    return x, attn_scores
 
 class FeedForward(tf.keras.layers.Layer):
   def __init__(self, d_model, dff, dropout_rate=0.1):
@@ -85,13 +87,20 @@ class EncoderLayer(tf.keras.layers.Layer):
         num_heads=num_heads,
         key_dim=d_model,
         dropout=dropout_rate)
+    
+    # self.casual_self_attention = CausalSelfAttention(
+    #    num_heads=num_heads,
+    #    key_dim=d_model,
+    #    dropout=dropout_rate
+    # )
 
     self.ffn = FeedForward(d_model, dff)
 
   def call(self, x):
-    x = self.self_attention(x)
+    x, attn_scores = self.self_attention(x)
+    # x, attn_scores = self.casual_self_attention(x)
     x = self.ffn(x)
-    return x
+    return x, attn_scores
 
 class NoiseRemovalTransformer(tf.keras.Model):
     def __init__(self, d_model, seq_len, num_heads, dff, num_layers, dropout_rate=0.1):
@@ -107,19 +116,25 @@ class NoiseRemovalTransformer(tf.keras.Model):
                            for _ in range(num_layers)]
         
         # Final layer
-        self.final_layer = tf.keras.layers.Dense(1, activation='tanh') # Output a single value for each time step
+        self.final_layer = tf.keras.layers.Dense(1, activation=None) # Output a single value for each time step
 
-    def call(self, x, training=None):
+    def call(self, x, return_attn_scores=False):
         x = self.embedding_layer(x)
 
         x = self.pos_encoding_layer(x)
 
         for i in range(len(self.enc_layers)):
-            x = self.enc_layers[i](x)
+            x, attn_scores = self.enc_layers[i](x)
 
         x = self.final_layer(x)
 
+        if return_attn_scores:
+            return x, attn_scores
+        
         return x
+    
+    # def get_attention_scores(self):
+    #     return self.attn_scores
 
 # d_model = 32
 # num_heads = 4
@@ -243,9 +258,9 @@ def generate_dataset(num_samples, sequence_length, base_noise_level=0.1, variabl
 
 # Model parameters
 d_model = 32
-num_heads = 2
+num_heads = 1
 num_layers = 1
-dff = 256
+dff = 128
 seq_len = 1000
 dropout_rate = 0.1
 
