@@ -4,6 +4,7 @@ import numpy as np
 from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+import cmasher as cmr
 
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, seq_len, d_model, **kwargs):
@@ -261,7 +262,7 @@ d_model = 32
 num_heads = 1
 num_layers = 1
 dff = 128
-seq_len = 1000
+seq_len = 100
 dropout_rate = 0.1
 
 # Generate training data
@@ -345,6 +346,15 @@ def plot_results(clean_signal, noisy_signal, denoised_signal):
     plt.title('Noise Removal Results')
     plt.xlabel('Time')
     plt.ylabel('Amplitude')
+    plt.show()
+
+def plot_attention_scores(attn_scores, cmap='cmr.cosmic'):
+    plt.figure(figsize=(4, 4))
+    plt.imshow(attn_scores, cmap=cmap)
+    plt.title('Attention Scores')
+    plt.xlabel('Key')
+    plt.ylabel('Query')
+    plt.colorbar()
     plt.show()
 
 # Test the model on a sample

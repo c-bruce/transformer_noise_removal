@@ -106,7 +106,8 @@ def generate_dataset(num_samples, sequence_length, base_noise_level=0.1, variabl
     
     for _ in range(num_samples):
         clean_signal = generate_realistic_signal(sequence_length, -0.1, 0.1)
-        noisy_signal = add_noise(clean_signal, base_noise_level, variable_noise_factor)
+        # noisy_signal = add_noise(clean_signal, base_noise_level, variable_noise_factor)
+        noisy_signal = add_noise(clean_signal, np.random.uniform(0.1,0.5), np.random.uniform(0.3,0.7))
         
         clean_signals.append(clean_signal)
         noisy_signals.append(noisy_signal)
