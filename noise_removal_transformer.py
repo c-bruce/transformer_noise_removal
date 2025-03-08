@@ -16,12 +16,12 @@ class PositionalEncoding(tf.keras.layers.Layer):
         position = np.arange(seq_len)[:, np.newaxis]
 
         # Create dimension array (shape: [d_model/2])
-        div_term = np.exp(np.arange(0, d_model, 2) * (-np.log(n) / d_model))
+        denominator = np.power(n, 2 * np.arange(0, d_model, 2) / d_model)
 
         # Compute the sinusoidal functions and stack them
         P = np.zeros((seq_len, d_model))
-        P[:, 0::2] = np.sin(position * div_term)  # Apply sin to even indices
-        P[:, 1::2] = np.cos(position * div_term)  # Apply cos to odd indices
+        P[:, 0::2] = np.sin(position / denominator)  # Apply sin to even indices
+        P[:, 1::2] = np.cos(position / denominator)  # Apply cos to odd indices
 
         # Convert to TensorFlow tensor and reshape to (1, seq_len, d_model)
         P_tensor = tf.convert_to_tensor(P, dtype=tf.float32)
@@ -354,6 +354,15 @@ def plot_attention_scores(attn_scores, cmap='cmr.cosmic'):
     plt.title('Attention Scores')
     plt.xlabel('Key')
     plt.ylabel('Query')
+    plt.colorbar()
+    plt.show()
+
+def plot_positional_encoding(pos_encoding, cmap='cmr.cosmic'):
+    plt.figure(figsize=(8, 6))
+    plt.pcolormesh(pos_encoding.T, cmap=cmap)
+    plt.xlabel('Position')
+    plt.ylabel('Depth')
+    plt.title('Positional Encoding')
     plt.colorbar()
     plt.show()
 
