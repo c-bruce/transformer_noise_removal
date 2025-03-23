@@ -37,8 +37,8 @@ class BaseAttention(tf.keras.layers.Layer):
   def __init__(self, **kwargs):
     super().__init__()
     self.mha = tf.keras.layers.MultiHeadAttention(**kwargs)
-    self.layernorm = tf.keras.layers.LayerNormalization()
     self.add = tf.keras.layers.Add()
+    self.layernorm = tf.keras.layers.LayerNormalization()
 
 class GlobalSelfAttention(BaseAttention):
   def call(self, x):
@@ -88,18 +88,11 @@ class EncoderLayer(tf.keras.layers.Layer):
         num_heads=num_heads,
         key_dim=d_model,
         dropout=dropout_rate)
-    
-    # self.casual_self_attention = CausalSelfAttention(
-    #    num_heads=num_heads,
-    #    key_dim=d_model,
-    #    dropout=dropout_rate
-    # )
 
     self.ffn = FeedForward(d_model, dff)
 
   def call(self, x):
     x, attn_scores = self.self_attention(x)
-    # x, attn_scores = self.casual_self_attention(x)
     x = self.ffn(x)
     return x, attn_scores
 
@@ -133,39 +126,6 @@ class NoiseRemovalTransformer(tf.keras.Model):
             return x, attn_scores
         
         return x
-    
-    # def get_attention_scores(self):
-    #     return self.attn_scores
-
-# d_model = 32
-# num_heads = 4
-# num_layers = 1
-# dff = 256
-# seq_len = 100
-
-# # Linear embedding layer
-# embedding_layer = tf.keras.layers.Dense(d_model, activation=None)
-# embedding_layer.build(input_shape=(None, seq_len, 1))
-
-# # Positional encoding layer
-# pos_encoding_layer = PositionalEncoding(seq_len=seq_len, d_model=d_model)
-
-# # Encoder layer
-# encoder_layer = EncoderLayer(d_model=d_model, num_heads=num_heads, dff=dff)
-
-# # Final layer
-# final_layer = tf.keras.layers.Dense(1, activation='tanh')
-# final_layer.build(input_shape=(None, seq_len, d_model))
-
-# # Example input
-# x = np.arange(300)
-# x = x.reshape(3, 100, 1)
-# x = tf.convert_to_tensor(x, dtype=tf.float32)
-
-# # Apply the layers
-# x = embedding_layer.call(x)  # Apply embedding layer
-# x = pos_encoding_layer.call(x)  # Apply positional encoding layer
-# x = encoder_layer.call(x)  # Apply encoder layer
 
 # MARK: Training
 
@@ -283,12 +243,6 @@ train_clean = clean_signals[:split_index]
 train_noisy = noisy_signals[:split_index]
 val_clean = clean_signals[split_index:]
 val_noisy = noisy_signals[split_index:]
-
-# # Define the model (assuming you've already defined the NoiseRemovalTransformer class)
-# d_model = 128
-# num_heads = 8
-# dff = 512
-# num_layers = 4
 
 model = NoiseRemovalTransformer(
     d_model=d_model, 
